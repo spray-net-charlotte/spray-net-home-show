@@ -7,7 +7,7 @@ window.SPRAYNET_CONFIG = Object.freeze({
   location: 'South Charlotte',
   event: 'Home Show',
   freeRenders: 5,
-  portfolioUrl: 'https://benjamin41997-ctrl.github.io/spray-net-portfolio/',
+  portfolioUrl: 'https://spray-net-charlotte.github.io/spray-net-portfolio/',
   bookingUrl: '',
   privacyUrl: ''
 });

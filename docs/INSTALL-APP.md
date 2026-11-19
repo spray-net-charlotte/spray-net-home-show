@@ -1,6 +1,6 @@
 # Install the booth tablet app
 
-Open https://benjamin41997-ctrl.github.io/spray-net-home-show/?mode=tablet on each booth tablet. Install from the public tablet page, before entering a visitor's information. The app icon always launches this public tablet workflow; it never contains a customer token or private project link.
+Open https://spray-net-charlotte.github.io/spray-net-home-show/?mode=tablet on each booth tablet. Install from the public tablet page, before entering a visitor's information. The app icon always launches this public tablet workflow; it never contains a customer token or private project link.
 
 ## Android tablet
 

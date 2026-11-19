@@ -1,6 +1,6 @@
 # Owner portal
 
-Open `https://benjamin41997-ctrl.github.io/spray-net-home-show/admin.html` and use the same email/password as the Spray-Net review portal. An existing review-portal sign-in on this GitHub Pages origin is reused automatically. Password setup/reset remains in the review portal; the owner page links to it and never sends a reset email automatically.
+Open `https://spray-net-charlotte.github.io/spray-net-home-show/admin.html` and use the same email/password as the Spray-Net review portal. An existing review-portal sign-in on this GitHub Pages origin is reused automatically. Password setup/reset remains in the review portal; the owner page links to it and never sends a reset email automatically.
 
 The official Supabase client persists and refreshes the session under the review portal's `spraynet-review-admin` storage key. Reloads, page closure and inactivity do not sign the owner out. Temporary connection failures preserve sign-in and allow retry. Explicit sign-out clears the shared browser session, including other open portal tabs. Passwords and the private operator key are never stored in browser storage. Provider expiry/revocation or clearing browser data can require a new sign-in. [Provider session behavior](https://supabase.com/docs/guides/auth/sessions).
 
@@ -20,7 +20,7 @@ Apply `backend/migrations/0005_lead_deletion_cleanup.sql` before deploying the d
 
 ## Weekly calendar
 
-The [Calendar view](https://benjamin41997-ctrl.github.io/spray-net-home-show/admin.html?view=calendar) opens a Monday–Sunday time grid. Previous/next week, Today and Go to date navigate the private schedule. A `date=YYYY-MM-DD` URL parameter can open a particular week directly. All dates and times are Eastern, including the November clock change. The server reads the selected week, including historical entries and multi-day blocks, rather than filtering only upcoming appointments in the browser.
+The [Calendar view](https://spray-net-charlotte.github.io/spray-net-home-show/admin.html?view=calendar) opens a Monday–Sunday time grid. Previous/next week, Today and Go to date navigate the private schedule. A `date=YYYY-MM-DD` URL parameter can open a particular week directly. All dates and times are Eastern, including the November clock change. The server reads the selected week, including historical entries and multi-day blocks, rather than filtering only upcoming appointments in the browser.
 
 Blue blocks show the full internal consultation reservation (normally 90 minutes), amber striped blocks show the reserved travel gap (normally 30 minutes), gray shows unavailable time, and yellow shows pending consultations. A full-day closure appears under the day heading. Overlapping items use separate columns. The calendar scrolls vertically for additional hours and horizontally on phones.
 

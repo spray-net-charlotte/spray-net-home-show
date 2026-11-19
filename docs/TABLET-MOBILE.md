@@ -4,9 +4,9 @@ The two one-page layouts share one private backend:
 
 | Use | URL |
 | --- | --- |
-| Visitor phone/public QR | https://benjamin41997-ctrl.github.io/spray-net-home-show/?mode=mobile |
-| Staffed tablet | https://benjamin41997-ctrl.github.io/spray-net-home-show/?mode=tablet |
-| Staff calendar/export | https://benjamin41997-ctrl.github.io/spray-net-home-show/admin.html |
+| Visitor phone/public QR | https://spray-net-charlotte.github.io/spray-net-home-show/?mode=mobile |
+| Staffed tablet | https://spray-net-charlotte.github.io/spray-net-home-show/?mode=tablet |
+| Staff calendar/export | https://spray-net-charlotte.github.io/spray-net-home-show/admin.html |
 
 Mobile is the default. See [deployment status](DEPLOYMENT.md) before assuming current source is live. **No Microsoft/Entra access is required** for internal scheduling.
 

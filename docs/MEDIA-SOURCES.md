@@ -15,7 +15,7 @@ The page reuses assets from the user's existing `spray-net-portfolio` project. N
 | `public/assets/Lato-Black.ttf` | Existing portfolio Lato font file. |
 | `public/assets/OFL.txt` | Copied font license; retained alongside the fonts. |
 
-The source portfolio is linked publicly at `https://benjamin41997-ctrl.github.io/spray-net-portfolio/`. Existing asset use follows the user's direction to reuse their existing material; this file does not assert new ownership or licensing rights for third-party trademarks or photographs.
+The source portfolio is linked publicly at `https://spray-net-charlotte.github.io/spray-net-portfolio/`. Existing asset use follows the user's direction to reuse their existing material; this file does not assert new ownership or licensing rights for third-party trademarks or photographs.
 
 The before/after images are labeled as Spray-Net portfolio transformations. They are not claimed to show a South Charlotte job or a new home-show customer's property. Brand service-area text and portfolio image provenance serve different purposes.
 

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { createQrMatrix, renderQr } from '../public/qr.js';
 
-const mobile = 'https://benjamin41997-ctrl.github.io/spray-net-home-show/?mode=mobile';
+const mobile = 'https://spray-net-charlotte.github.io/spray-net-home-show/?mode=mobile';
 // Synthetic fixture only. It is not an issued lead or a usable credential.
 const privateProject = `${mobile}#studio=123e4567-e89b-42d3-a456-426614174000.${'A'.repeat(43)}`;
 const fixtures = [

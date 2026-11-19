@@ -1,6 +1,6 @@
 # Production deployment
 
-Website: https://benjamin41997-ctrl.github.io/spray-net-home-show/
+Website: https://spray-net-charlotte.github.io/spray-net-home-show/
 
 API: https://spray-net-home-show-api.spray-net-south-charlotte.workers.dev
 
