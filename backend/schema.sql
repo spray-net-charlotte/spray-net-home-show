@@ -31,6 +31,14 @@ CREATE TABLE IF NOT EXISTS leads (
 );
 CREATE INDEX IF NOT EXISTS leads_phone_event ON leads(phone_normalized, event_id);
 
+CREATE TABLE IF NOT EXISTS lead_project_details (
+  lead_id TEXT PRIMARY KEY REFERENCES leads(id) ON DELETE CASCADE,
+  project_type TEXT NOT NULL DEFAULT '',
+  project_notes TEXT NOT NULL DEFAULT '',
+  revision INTEGER NOT NULL CHECK (revision > 0),
+  updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS scheduling_followups (
   lead_id TEXT PRIMARY KEY REFERENCES leads(id) ON DELETE CASCADE,
   requested_at TEXT NOT NULL

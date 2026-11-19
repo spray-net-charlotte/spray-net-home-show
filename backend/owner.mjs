@@ -8,6 +8,27 @@ export class OwnerError extends Error {
 }
 const fail = (status,code,message) => {throw new OwnerError(status,code,message);};
 
+export async function saveProjectDetails(env,leadId,body) {
+  if(!UUID.test(leadId))fail(400,'INVALID_LEAD','Choose a valid lead.');
+  if(!body || typeof body!=='object' || Array.isArray(body)
+    || Object.keys(body).some(key=>!['projectType','projectNotes','projectRevision'].includes(key))
+    || typeof body.projectType!=='string' || body.projectType.length>160 || /[\u0000-\u001f\u007f]/.test(body.projectType)
+    || typeof body.projectNotes!=='string' || body.projectNotes.length>4000 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(body.projectNotes)
+    || !Number.isSafeInteger(body.projectRevision) || body.projectRevision<0)
+    fail(400,'INVALID_PROJECT_DETAILS','Enter a painting type up to 160 characters and project notes up to 4,000 characters.');
+  leadId=leadId.toLowerCase();
+  const result=await env.DB.prepare(`INSERT INTO lead_project_details(lead_id,project_type,project_notes,revision,updated_at)
+    SELECT id,?,?,1,? FROM leads WHERE id=? AND ?=COALESCE((SELECT revision FROM lead_project_details WHERE lead_id=?),0)
+    ON CONFLICT(lead_id) DO UPDATE SET project_type=excluded.project_type,project_notes=excluded.project_notes,
+      revision=lead_project_details.revision+1,updated_at=excluded.updated_at`)
+    .bind(body.projectType.trim(),body.projectNotes.trim(),new Date().toISOString(),leadId,body.projectRevision,leadId).run();
+  if(result.meta.changes!==1) {
+    if(!await env.DB.prepare('SELECT id FROM leads WHERE id=?').bind(leadId).first())fail(404,'LEAD_NOT_FOUND','This lead no longer exists.');
+    fail(409,'PROJECT_DETAILS_CHANGED','Someone saved newer project details. Keep a copy of your notes, then refresh the portal before editing again.');
+  }
+  return {saved:true,projectRevision:body.projectRevision+1};
+}
+
 async function cleanDeletedMedia(env,job) {
   try {
     // Never clean objects for an active lead, even if a damaged queue row exists.
@@ -82,6 +103,8 @@ export async function markConfirmationDraft(env,leadId,body) {
 const PROGRESS = `WITH progress AS (
   SELECT l.id,l.first_name,l.last_name,l.phone,l.phone_normalized,l.email,l.address,l.city,l.state,l.zip,
     l.event_label,l.capture_mode,l.consultation_preference,l.remaining_renders,l.created_at,
+    COALESCE(d.project_type,l.service) AS project_type,COALESCE(d.project_notes,l.notes) AS project_notes,
+    COALESCE(d.revision,0) AS project_revision,
     (SELECT requested_at FROM scheduling_followups f WHERE f.lead_id=l.id) AS scheduling_followup_requested_at,
     b.status AS booking_status,b.start_at AS booking_start,b.end_at AS booking_end,b.transaction_id AS draft_version,${confirmationDraftColumns},
     (SELECT COUNT(*) FROM photos p WHERE p.lead_id=l.id AND p.status='ready') AS photo_count,
@@ -89,7 +112,7 @@ const PROGRESS = `WITH progress AS (
     (SELECT COUNT(*) FROM renders r WHERE r.lead_id=l.id AND r.status='pending') AS pending_render_count,
     (SELECT COUNT(*) FROM lead_visits v WHERE v.lead_id=l.id) AS visit_count,
     (SELECT MAX(accessed_at) FROM lead_visits v WHERE v.lead_id=l.id) AS last_accessed_at
-  FROM leads l LEFT JOIN consultation_bookings b ON b.lead_id=l.id
+  FROM leads l LEFT JOIN consultation_bookings b ON b.lead_id=l.id LEFT JOIN lead_project_details d ON d.lead_id=l.id
 ), staged AS (SELECT progress.*,CASE
   WHEN booking_status='pending' THEN 'booking_pending'
   WHEN booking_status='confirmed' AND render_count>0 THEN 'visualizations_created'
@@ -108,7 +131,7 @@ export async function listOwnerLeads(env,url) {
   const page = Number(pageText), pageSize = 50, bindings = [], conditions = [];
   if (stage) {conditions.push('stage=?');bindings.push(stage);}
   if (query) {
-    conditions.push("INSTR(LOWER(first_name||' '||last_name||' '||phone||' '||phone_normalized||' '||email||' '||address),LOWER(?))>0");bindings.push(query);
+    conditions.push("INSTR(LOWER(first_name||' '||last_name||' '||phone||' '||phone_normalized||' '||email||' '||address||' '||project_type||' '||project_notes),LOWER(?))>0");bindings.push(query);
   }
   const where = conditions.length ? ` WHERE ${conditions.join(' AND ')}` : '';
   await retryDeletedMedia(env);
@@ -126,6 +149,7 @@ export async function listOwnerLeads(env,url) {
     overview:{total:overview.total,booked:overview.booked,needsBooking:overview.needs_booking,visualizerUsed:overview.visualizer_used},
     leads:rows.results.map(row => ({id:row.id,name:`${row.first_name} ${row.last_name}`.trim(),phone:row.phone,email:row.email,
       address:row.address,city:row.city,state:row.state,zip:row.zip,event:row.event_label,captureMode:row.capture_mode,createdAt:row.created_at,
+      projectType:row.project_type,projectNotes:row.project_notes,projectRevision:row.project_revision,
       stage:row.stage,schedulingFollowUpRequestedAt:row.stage==='scheduling_followup'?row.scheduling_followup_requested_at:null,
       booking:{status:row.booking_status || 'none',start:row.booking_start || null,end:row.booking_end || null,
         draftVersion:row.draft_version||null,confirmationDrafts:confirmationDraftValues(row)},

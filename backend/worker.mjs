@@ -6,7 +6,7 @@ import * as outlookBooking from './booking.mjs';
 import * as internalBooking from './internal-booking.mjs';
 import { AddressError } from './address.mjs';
 import { addressResponse } from './address-response.mjs';
-import { OwnerError, recordProjectVisit, listOwnerLeads, deleteOwnerLead, markConfirmationDraft } from './owner.mjs';
+import { OwnerError, recordProjectVisit, listOwnerLeads, deleteOwnerLead, markConfirmationDraft, saveProjectDetails } from './owner.mjs';
 import { OwnerAuthError, requireOwner } from './owner-auth.mjs';
 import { selectedSurfaces } from '../public/project-options.js';
 import { customRenderPrompt } from '../public/render-settings.js';
@@ -456,9 +456,10 @@ async function exportCsv(request, env) {
       (SELECT 1 FROM consultation_bookings b WHERE b.lead_id=l.id AND b.status IN ('pending','confirmed'))) AS scheduling_followup_requested_at,
     (SELECT COUNT(*) FROM photos p WHERE p.lead_id=l.id AND p.status='ready') AS photo_count,
     (SELECT COUNT(*) FROM renders r WHERE r.lead_id=l.id AND r.status='completed') AS render_count
-    FROM leads l ORDER BY l.created_at DESC LIMIT 10000`).all();
+    ,COALESCE(d.project_type,l.service) AS staff_project_type,COALESCE(d.project_notes,l.notes) AS staff_project_notes
+    FROM leads l LEFT JOIN lead_project_details d ON d.lead_id=l.id ORDER BY l.created_at DESC LIMIT 10000`).all();
   const columns = ['id','first_name','last_name','email','phone','address','city','state','zip','service','capture_mode','consultation_preference','timeline','notes',
-    'event_id','event_label','consent_at','consent_version','remaining_renders','created_at','photo_count','render_count','scheduling_followup_requested_at'];
+    'event_id','event_label','consent_at','consent_version','remaining_renders','created_at','photo_count','render_count','scheduling_followup_requested_at','staff_project_type','staff_project_notes'];
   const csv = '\uFEFF' + [columns.map(csvCell).join(','), ...results.map(row => columns.map(c => csvCell(row[c])).join(','))].join('\r\n');
   return new Response(csv, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="home-show-leads.csv"' } });
 }
@@ -495,6 +496,12 @@ async function route(request, env, config, context) {
     return json(await listOwnerLeads(env,new URL(request.url)));
   }
   const adminLead=pathname.match(/^\/api\/admin\/leads\/([^/]+)$/);
+  const adminProject=pathname.match(/^\/api\/admin\/leads\/([^/]+)\/project-details$/);
+  if(adminProject) {
+    await requireAdmin(request,env);
+    if(method!=='POST')fail(405,'METHOD_NOT_ALLOWED','Use the project details editor.');
+    return json(await saveProjectDetails(env,adminProject[1],await readJson(request)));
+  }
   const adminDraft=pathname.match(/^\/api\/admin\/leads\/([^/]+)\/confirmation-drafts$/);
   if(adminDraft) {
     await requireAdmin(request,env);

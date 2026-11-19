@@ -293,6 +293,45 @@ test('follow-up migration is additive and repeatable; deleting a lead removes on
   const rows=env.DB.sqlite.prepare('SELECT * FROM scheduling_followups').all();assert.equal(rows.length,1);assert.equal(rows[0].lead_id,other.id);
 });
 
+test('staff project details persist across lead/calendar/export reads without changing visitor input or bookings',async()=>{
+  const env=environment({BOOKING_PROVIDER:'internal'}),person=await lead(env);confirmBooking(env,person);
+  env.DB.sqlite.prepare('UPDATE consultation_bookings SET calendar_key=? WHERE lead_id=?').run('internal:ben.hessler@spray-net.com',person.id);
+  const before=env.DB.sqlite.prepare('SELECT * FROM consultation_bookings WHERE lead_id=?').get(person.id);
+  const original=env.DB.sqlite.prepare('SELECT * FROM leads WHERE id=?').get(person.id);
+  const path=`/api/admin/leads/${person.id}/project-details`,body={projectType:' Exterior brick & shutters ',projectNotes:' Staff-only: side gate\nCustomer wants warm white. ',projectRevision:0};
+  for(const token of [undefined,person.token,'invalid-owner-token'])assert.equal((await request(env,path,{method:'POST',body,token})).status,401);
+  assert.equal((await request(env,path,{method:'POST',body,token:env.ADMIN_TOKEN})).status,200);
+  const leads=await(await request(env,'/api/admin/leads?q=side%20gate',{token:env.ADMIN_TOKEN})).json();
+  assert.equal(leads.total,1);const row=leads.leads[0];assert.equal(row.projectType,body.projectType.trim());assert.equal(row.projectNotes,body.projectNotes.trim());assert.equal(row.projectRevision,1);
+  const calendar=await(await request(env,'/api/admin/bookings?week=2026-11-02',{token:env.ADMIN_TOKEN})).json();
+  for(const key of ['projectType','projectNotes','projectRevision'])assert.equal(calendar.bookings[0][key],row[key]);
+  const csv=await(await request(env,'/api/admin/leads.csv',{token:env.ADMIN_TOKEN})).text();assert.ok(csv.includes('staff_project_notes'));assert.ok(csv.includes(body.projectNotes.trim()));
+  const visitor=await(await request(env,`/api/leads/${person.id}/session`,{token:person.token})).json();
+  assert.equal(visitor.lead.service,original.service);assert.ok(!JSON.stringify(visitor).includes('side gate'));assert.ok(!JSON.stringify(visitor).includes('projectNotes'));
+  assert.deepEqual(env.DB.sqlite.prepare('SELECT * FROM leads WHERE id=?').get(person.id),original);
+  assert.deepEqual(env.DB.sqlite.prepare('SELECT * FROM consultation_bookings WHERE lead_id=?').get(person.id),before);
+  assert.equal((await request(env,path,{method:'POST',body,token:env.ADMIN_TOKEN})).status,409,'Stale tabs cannot overwrite new notes.');
+  assert.equal((await request(env,path,{method:'POST',body:{projectType:'',projectNotes:'',projectRevision:1},token:env.ADMIN_TOKEN})).status,200);
+  const cleared=await(await request(env,'/api/admin/leads',{token:env.ADMIN_TOKEN})).json();assert.equal(cleared.leads[0].projectType,'');assert.equal(cleared.leads[0].projectRevision,2);
+  await request(env,`/api/admin/leads/${person.id}`,{method:'DELETE',body:{confirmation:'DELETE'},token:env.ADMIN_TOKEN});
+  assert.equal(env.DB.sqlite.prepare('SELECT COUNT(*) AS n FROM lead_project_details').get().n,0);
+});
+
+test('staff project editor rejects malformed input and its migration preserves existing leads',async()=>{
+  const env=environment(),person=await lead(env),path=`/api/admin/leads/${person.id}/project-details`,body={projectType:'Kitchen cabinets',projectNotes:'Doors and island',projectRevision:0};
+  for(const bad of [null,[],{}, {...body,projectType:7},{...body,projectType:'x'.repeat(161)},{...body,projectNotes:'x'.repeat(4001)},
+    {...body,projectType:'Exterior\nKitchen'},{...body,projectNotes:'bad\u0000value'},{...body,projectRevision:-1},{...body,projectRevision:1.5},{...body,email:'overwrite@example.com'}])
+    assert.equal((await request(env,path,{method:'POST',body:bad,token:env.ADMIN_TOKEN})).status,400);
+  assert.equal((await request(env,path,{method:'GET',token:env.ADMIN_TOKEN})).status,405);
+  assert.equal((await request(env,`/api/admin/leads/${crypto.randomUUID()}/project-details`,{method:'POST',body,token:env.ADMIN_TOKEN})).status,404);
+  const original=env.DB.sqlite.prepare('SELECT * FROM leads WHERE id=?').get(person.id);
+  env.DB.sqlite.exec('DROP TABLE lead_project_details');
+  const migration=readFileSync(new URL('../backend/migrations/0009_project_details.sql',import.meta.url),'utf8');env.DB.sqlite.exec(migration);env.DB.sqlite.exec(migration);
+  assert.deepEqual(env.DB.sqlite.prepare('SELECT * FROM leads WHERE id=?').get(person.id),original);
+  const listing=await(await request(env,'/api/admin/leads',{token:env.ADMIN_TOKEN})).json();assert.equal(listing.leads[0].projectType,original.service);assert.equal(listing.leads[0].projectRevision,0);
+  assert.equal((await request(env,path,{method:'POST',body,token:env.ADMIN_TOKEN})).status,200);
+});
+
 test('manual draft markers are owner-only, separate per channel and persist in both lead and calendar reads',async()=>{
   const env=environment({BOOKING_PROVIDER:'internal'}),person=await lead(env);confirmBooking(env,person);
   env.DB.sqlite.prepare('UPDATE consultation_bookings SET calendar_key=? WHERE lead_id=?').run('internal:ben.hessler@spray-net.com',person.id);

@@ -1,5 +1,6 @@
 import { safeApiBase } from './lib.js';
 import { createCalendarFile } from './calendar.js';
+import { createProjectDetails } from './project-details.js';
 import { createOwnerAuth } from './owner-auth.js';
 import { createConfirmationTools, updateConfirmationDrafts } from './confirmation-tools.js';
 import { mondayOfWeek, addCalendarDays } from './calendar-dates.js';
@@ -195,6 +196,21 @@ function initializeAdmin() {
       $(`#${name}-panel`).hidden=!active;if(active && focus)tab.focus();
     }
   }
+  function projectDetails(record) {
+    return createProjectDetails({record,document,isActive:()=>state.authenticated&&!state.busy,onSave:async body=>{
+      const generation=state.generation;busy(true,'Saving project details…');message();
+      try {
+        await request(`/api/admin/leads/${record.id||record.leadId}/project-details`,{method:'POST',body});
+        if(generation!==state.generation)return;
+        message('Project details saved.',true);
+        // A successful save remains successful even if a later refresh is interrupted.
+        try {await loadWorkspace(generation);}catch(error){if(generation===state.generation)handleFailure(error);}
+      } catch(error) {
+        if(generation===state.generation&&[401,403].includes(error.status))handleFailure(error);
+        throw error;
+      } finally {if(generation===state.generation)busy(false);}
+    }});
+  }
   function renderLeads(data) {
     if (!data || !Array.isArray(data.leads) || !data.overview || !Number.isInteger(data.total) || !Number.isInteger(data.page) || data.pageSize!==50)
       throw new Error('INVALID_LEAD_RESPONSE');
@@ -212,7 +228,7 @@ function initializeAdmin() {
       header.append(element('h3','',lead.name || 'Home show visitor'),element('span','lead-stage'+badge,STAGES[lead.stage]));
       card.append(header,element('p','lead-created',`Submitted ${formatEasternInstant(lead.createdAt)} · ${lead.captureMode==='tablet'?'Booth tablet':'Mobile'}`),detail('Phone',lead.phone,true));
       if(lead.email)card.append(detail('Email',lead.email));
-      card.append(detail('Project address',lead.address));
+      card.append(detail('Project address',lead.address),projectDetails(lead));
       if(lead.schedulingFollowUpRequestedAt)card.append(element('p','lead-followup','Requested a call to schedule a convenient time.'));
       if(lead.booking?.start && validInstant(lead.booking.start)) card.append(element('p','lead-booking',`${lead.booking.status==='confirmed'?'Consultation':lead.booking.status==='cancelled'?'Cancelled consultation':'Pending consultation'} · ${formatEasternInstant(lead.booking.start)}`));
       const progress=element('div','lead-progress');
@@ -242,7 +258,7 @@ function initializeAdmin() {
       card.append(element('p', 'appointment-time', `${formatEasternInstant(appointment.start)} – ${formatEasternInstant(appointment.end)}`));
       const heading = element('div', 'appointment-heading');
       heading.append(element('h3', '', appointment.name || 'Home show visitor'), element('span', `badge${appointment.status === 'pending' ? ' pending' : ''}`, appointment.status === 'pending' ? 'PENDING' : 'CONFIRMED'));
-      card.append(heading, detail('Phone', appointment.phone, true), detail('Project address', appointment.address));
+      card.append(heading, detail('Phone', appointment.phone, true), detail('Project address', appointment.address),projectDetails(appointment));
       if (appointment.email) card.append(detail('Email', appointment.email));
       const end=Date.parse(appointment.end),customerEnd=new Date(Math.min(end,Date.parse(appointment.start)+3600000)).toISOString();
       const travelEnd=new Date(end+(state.calendarData?.bufferMinutes??30)*60000).toISOString();

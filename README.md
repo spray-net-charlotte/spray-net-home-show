@@ -50,6 +50,7 @@ The preview at http://localhost:4173 serves public/ and does not emulate live sa
 - Private JPEG/PNG/WebP uploads up to 10 MB, color/surface choices, completed-image download, and failed-image retrieval.
 - Five successful renders per normalized phone/event, durable atomic credit/attempt limits, and server-only image credentials. Failed renders restore visitor credit; attempts remain counted because charges may occur.
 - Protected CSV export, exact-origin CORS, private R2, and no customer data or runtime secrets in public assets.
+- Staff-only painting type and project notes, editable on lead cards and calendar appointment details. The weekly calendar shows the painting type; lead search includes type/notes, and CSV appends staff project columns. Original visitor submissions are preserved.
 - GitHub checks/build/Pages workflow gated by PUBLISH_PAGES=true; Worker migrations/deployments remain separate.
 
 Follow [SETUP.md](docs/SETUP.md), [tablet/mobile operation](docs/TABLET-MOBILE.md), and [calendar setup](docs/CALENDAR-SETUP.md). Asset provenance is in [MEDIA-SOURCES.md](docs/MEDIA-SOURCES.md).

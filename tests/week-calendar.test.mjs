@@ -72,11 +72,13 @@ function fixture() {
 }
 test('weekly view renders seven headings, handles appointment and travel clicks, and ignores stale signed-out controls',()=>{
   const view=fixture(),clicks=[];let active=true;
-  renderWeekCalendar(view.container,{...schedule,bookings:[{...booking,name:'<img src=x onerror=alert(1)>'}]},
+  renderWeekCalendar(view.container,{...schedule,bookings:[{...booking,name:'<img src=x onerror=alert(1)>',projectType:'Exterior brick & shutters',projectNotes:'Private staff note'}]},
     {week:'2026-10-26',today:'2026-10-26',isActive:()=>active,onSelect:entry=>clicks.push(entry)});
   assert.equal(view.all().filter(node=>node.className?.startsWith('week-day-heading')).length,7);
   const buttons=view.all().filter(node=>node.tagName==='button');assert.equal(buttons.length,2);
   assert.ok(buttons[0].textContent.includes('<img src=x onerror=alert(1)>'));assert.equal(buttons[0].style.top,'180px');
+  assert.ok(buttons[0].textContent.includes('Exterior brick & shutters'));assert.ok(buttons[0].getAttribute('aria-label').includes('Exterior brick & shutters'));
+  assert.ok(!buttons[0].textContent.includes('Private staff note'));
   buttons[0].dispatchEvent(new Event('click'));buttons[1].dispatchEvent(new Event('click'));
   assert.deepEqual(clicks.map(entry=>entry.kind),['booking','booking']);assert.equal(clicks[0].record.address,booking.address);
   active=false;buttons[0].dispatchEvent(new Event('click'));assert.equal(clicks.length,2);

@@ -76,6 +76,8 @@ Existing databases also need `0007_durable_render_quotas.sql` before deploying t
 
 Apply additive `0008_scheduling_followups.sql` before deploying scheduling callback support. It adds one private callback timestamp per existing lead without changing contact details, bookings, or credits. A confirmed booking resolves the flag; lead deletion cascades its follow-up record. Fresh `schema.sql` includes the table.
 
+Apply additive `0009_project_details.sql` before deploying the staff project editor. It stores painting type and private project notes separately from the original visitor submission; no existing lead or appointment changes. Fresh `schema.sql` includes the table. In the owner portal, open **Edit project details** on a lead or calendar appointment, enter the exact painting type and notes, then select **Save project details**. Edits appear in both views and the private CSV's appended `staff_project_type` / `staff_project_notes` columns. A stale editor cannot overwrite a newer save; copy the unsaved notes before refreshing if a conflict appears.
+
 ~~~sh
 npx wrangler deploy --config backend/wrangler.jsonc
 ~~~

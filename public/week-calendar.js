@@ -71,8 +71,9 @@ export function renderWeekCalendar(container,schedule,{week,onSelect,isActive=()
     const when=allDay?'All day':`${calendarTime(item.start)}–${calendarTime(item.end)}`;
     const button=node('button',`week-event ${kind}${record.status==='pending'?' pending':''}${allDay?' all-day':''}`);
     button.type='button';button.setAttribute('data-action-button','');
-    button.setAttribute('aria-label',`${title}, ${when}${record.address?', '+record.address:''}`);button.title=button.getAttribute('aria-label');
+    button.setAttribute('aria-label',`${title}, ${when}${!travel&&!block?', '+(record.projectType||'Project type not recorded'):''}${record.address?', '+record.address:''}`);button.title=button.getAttribute('aria-label');
     button.append(node('strong','',title),node('span','',when));
+    if(!travel&&!block)button.append(node('span','week-event-project',record.projectType||'Project type not recorded'));
     if(!travel&&!block&&record.address)button.append(node('span','week-event-address',record.address));
     if(!allDay) {
       button.style.top=(item.startMinute-model.startMinute)+'px';button.style.height=Math.max(29,item.endMinute-item.startMinute-2)+'px';
