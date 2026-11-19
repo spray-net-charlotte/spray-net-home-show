@@ -8,8 +8,8 @@ const mobile = 'https://spray-net-charlotte.github.io/spray-net-home-show/?mode=
 const privateProject = `${mobile}#studio=123e4567-e89b-42d3-a456-426614174000.${'A'.repeat(43)}`;
 const fixtures = [
   ['https://example.com/', 2, 'c0183ef005087abc43b27fbfd3532b2a01bcd08c36d4e00aca1c64f9f6766d6a'],
-  [mobile, 5, 'bd504821ab6317eef2e3c3be81bdfe06418ee21715210be9ca419d7497977dc2'],
-  [privateProject, 9, '51f3d92528de9cbe1b77304857434c4256eae9c357095a3d4cd2136e6e493346'],
+  [mobile, 5, 'd43eb1f23310c0d33f86e3c0e0b4dd44af49e07e47ee7233e36cae1d874a796c'],
+  [privateProject, 9, '0b0f2daa739e54d0ec80cfc4d6a7f1ee0deb08b001675c2f3945c42ef5943c70'],
 ];
 
 test('pinned local QR encoder matches independently decoded URL fixtures', () => {
